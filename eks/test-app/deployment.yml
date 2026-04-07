@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: anime
+  name: anime-depl
+spec:
+  replicas: 6
+  selector:
+    matchLabels:
+      app: anime-app
+  template:
+    metadata:
+      labels:
+        app: anime-app
+    spec:
+      containers:
+      - name: anime-cont
+        image: truebad0ur/anime-webpage:v5-amd64
+        ports:
+        - containerPort: 80
+        imagePullPolicy: Always

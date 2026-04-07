@@ -1,0 +1,128 @@
+# nginx in test
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+  namespace: test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+  namespace: test
+spec:
+  selector:
+    app: nginx
+  ports:
+  - port: 80
+---
+# nginx in prod
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+  namespace: prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+  namespace: prod
+spec:
+  selector:
+    app: nginx
+  ports:
+  - port: 80
+---
+# curl in test - targets nginx in test
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: curl-test
+  namespace: test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: curl-test
+  template:
+    metadata:
+      labels:
+        app: curl-test
+    spec:
+      containers:
+      - name: curl
+        image: curlimages/curl:latest
+        command: ["sh", "-c", "while true; do curl -s -o /dev/null -w '%{http_code} test->test\\n' http://nginx.test; sleep 2; done"]
+---
+# curl in prod - targets nginx in prod
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: curl-prod
+  namespace: prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: curl-prod
+  template:
+    metadata:
+      labels:
+        app: curl-prod
+    spec:
+      containers:
+      - name: curl
+        image: curlimages/curl:latest
+        command: ["sh", "-c", "while true; do curl -s -o /dev/null -w '%{http_code} prod->prod\\n' http://nginx.prod; sleep 2; done"]
+---
+# curl in test - targets nginx in prod (cross-namespace, will be blocked by network policy)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: curl-cross
+  namespace: test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: curl-cross
+  template:
+    metadata:
+      labels:
+        app: curl-cross
+    spec:
+      containers:
+      - name: curl
+        image: curlimages/curl:latest
+        command: ["sh", "-c", "while true; do curl -s -o /dev/null -w '%{http_code} test->prod\\n' --max-time 3 http://nginx.prod; sleep 2; done"]

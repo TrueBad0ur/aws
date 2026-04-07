@@ -1,0 +1,37 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: my-cluster
+  region: us-east-1
+  version: "1.35"
+
+iam:
+  withOIDC: true
+
+availabilityZones:
+  - us-east-1a
+  - us-east-1b
+  - us-east-1c
+
+addons:
+  - name: coredns
+  - name: metrics-server
+  - name: aws-ebs-csi-driver
+    wellKnownPolicies:
+      ebsCSIController: true
+
+managedNodeGroups:
+  - name: worker-nodes
+    instanceType: t3.medium
+    desiredCapacity: 3
+    minSize: 1
+    maxSize: 3
+    availabilityZones:
+      - us-east-1a
+      - us-east-1b
+      - us-east-1c
+    taints:
+      - key: node.cilium.io/agent-not-ready
+        value: "true"
+        effect: NoExecute
